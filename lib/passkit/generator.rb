@@ -133,13 +133,17 @@ module Passkit
 
     # :nocov:
     def sign_manifest
-      p12_certificate = OpenSSL::PKCS12.new(File.read(certificate_path), Passkit.configuration.certificate_key)
+      flag = OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY
       intermediate_certificate = OpenSSL::X509::Certificate.new(File.read(intermediate_certificate_path))
 
-      flag = OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY
-      signed = OpenSSL::PKCS7.sign(p12_certificate.certificate,
-        p12_certificate.key, File.read(@manifest_url),
-        [intermediate_certificate], flag)
+      signed = if Passkit.configuration.file_certificate_configured?
+        p12_certificate = OpenSSL::PKCS12.new(File.read(certificate_path), Passkit.configuration.certificate_key)
+        OpenSSL::PKCS7.sign(p12_certificate.certificate, p12_certificate.key, File.read(@manifest_url), [intermediate_certificate], flag)
+      else
+        certificate = OpenSSL::X509::Certificate.new(Passkit.configuration.private_p12_certificate_string)
+        private_key = OpenSSL::PKey::RSA.new(Passkit.configuration.private_p12_private_key_string)
+        OpenSSL::PKCS7.sign(certificate, private_key, File.read(@manifest_url), [intermediate_certificate], flag)
+      end
 
       @signature_url = @temporary_path.join("signature")
       File.open(@signature_url, "w") { |f| f.syswrite signed.to_der }
