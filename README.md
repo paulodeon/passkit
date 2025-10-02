@@ -58,6 +58,7 @@ If you followed the installation steps, you already saw that Passkit provides
 you the tables and ActiveRecord models, and also an engine with the necessary APIs already implemented.
 
 Now is your turn. Before proceeding, you need to set these ENV variables:
+
 * `PASSKIT_WEB_SERVICE_HOST`
 * `PASSKIT_CERTIFICATE_KEY`
 * `PASSKIT_PRIVATE_P12_CERTIFICATE`
@@ -67,6 +68,26 @@ Now is your turn. Before proceeding, you need to set these ENV variables:
 
 We have a [specific guide on how to get all these](docs/passkit_environment_variables.md), please follow it.
 You cannot start using this library without these variables set, and we cannot do the work for you.
+
+Alternatively, you can configure passkit with an initializer, where you can use environment variables, Rails secrets,
+or any other source for the required credentials:
+
+```ruby
+Passkit.configure do |config|
+  # Required, no defaults
+  config.apple_team_identifier = "dummy ID"
+  config.certificate_key = "dummy key"
+  config.private_p12_certificate = "path/to/file"
+  config.apple_intermediate_certificate = "path/to/file"
+  config.pass_type_identifier = "pass.com.some.id"
+
+  # Optional, defaults shown
+  config.dashboard_username = nil
+  config.dashboard_password = nil
+  config.skip_verification = false # Unless true, throws exceptions on startup when a required configuration is missing
+  config.web_service_host = "https://localhost:3000"
+  config.available_passes = { "Passkit::ExampleStoreCard" => -> {} }
+end
 
 ## Usage
 
@@ -120,7 +141,7 @@ Again, looking at these examples, is the easiest way to get started.
 
 ### Create your own Wallet Pass
 
-You can create your own Wallet Passes by creating a new class that inherits from `Passkit::BasePass` and 
+You can create your own Wallet Passes by creating a new class that inherits from `Passkit::BasePass` and
 defining the methods that you want to override.
 
 You can define colors, fields and texts. You can also define the logo and the background image.
@@ -152,11 +173,11 @@ Passkit::UrlGenerator.new(Passkit::UserTicket, User.find(1), :tickets)
 and then use `.android` or `.ios` to get the URL to serve the Wallet Pass.
 Again, check the example mailer included in the gem to see how to use it.
 
-## Debug issues 
+## Debug issues
 
 * On Mac, you can open the *.pkpass files with "Pass Viewer". Open the `Console.app` to log possible error messages and filter by "Pass Viewer" process.
 * Check the logs on http://localhost:3000/passkit/dashboard/logs
-* In case of error "The passTypeIdentifier or teamIdentifier provided may not match your certificate, 
+* In case of error "The passTypeIdentifier or teamIdentifier provided may not match your certificate,
 or the certificate trust chain could not be verified." the certificate (p12) might be expired.
 
 
